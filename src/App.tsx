@@ -1,24 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import {Route, Routes, Navigate, Link} from "react-router-dom"
+import Router from './components/Router';
+import {app} from "firebaseApp";
+import { getAuth } from 'firebase/auth';
 
 function App() {
+  const auth = getAuth(app);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!auth?.currentUser);
   return (
     <>
-      <div>
-        <Link to ='/'>Home</Link>
-        <Link to ='/posts'>post</Link>
-      </div>
-      <Routes>
-        <Route path = '/' element={<h1>Home</h1>} />
-        <Route path = '/posts' element={<h1>post</h1>} />
-        <Route path = '/posts/:id' element={<h1>post</h1>} />
-        <Route path = '/posts/new' element={<h1>post</h1>} />
-        <Route path = '/posts/edit/:id' element={<h1>post</h1>} />
-        <Route path = '/profile' element={<h1>post</h1>} />
-        <Route path = '*' element={<Navigate replace to = "/" />} />
-      </Routes>
+      <Router isAuthenticated = {isAuthenticated}/>
     </>
   );
 }
