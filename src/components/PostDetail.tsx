@@ -1,32 +1,54 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from 'firebaseApp';
+import React, { useEffect, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { Post } from 'type/post';
+import Loader from './Loader';
 
 export default function PostDetail() {
-  return (
+    const [post, setPost] = useState<Post | null>(null)
+    const {id : params} = useParams();
+    console.log(params)
+
+    const getPost = async(id : string) => {
+        if(id){
+            const docRef = doc(db, "posts", id);
+            const docSnap = await getDoc(docRef);
+            console.log(docSnap?.data());
+
+            setPost({id : docSnap.id, ...docSnap.data() as Post})
+        }
+    }
+
+    useEffect(()=>{
+        if(params) getPost(params);
+    },[params])
+
+    return (
     <div className = "post__detail">
-        <div className='post__box'>
-            <div className='post__title'>
-            "Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit..."
-            </div>
-            <div className='post__profile-box'>
-                <div className="post__profile" />
-                <div className="post__author-name" >안상문</div>
-                <div className="post__date" >2023.06.04</div>
-            </div>
-            <div className="post__utils-box">
-                <div className="post__delete">삭제</div>
-                <div className="post__edit">
-                    <Link to = {`/posts/edit/1`} > 수정 </Link>
+        {post ? 
+        (
+            <div className='post__box'>
+                <div className='post__title'>
+                    {post?.title}
                 </div>
+                <div className='post__profile-box'>
+                    <div className="post__profile" />
+                    <div className="post__author-name" >{post?.email}</div>
+                    <div className="post__date" >{post?.createdAt}</div>
+                </div>
+                <div className="post__utils-box">
+                    <div className="post__delete">삭제</div>
+                    <div className="post__edit">
+                        <Link to = {`/posts/edit/${post?.id}`} > 수정 </Link>
+                    </div>
+                </div>
+                <div className="post__text post__text--pre-wrap">
+                    {post?.content}
+                </div> 
             </div>
-            <div className="post__text">
-                Lorem Ipsum is simply dummy text of the printing and typesetting industry. 
-                Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, 
-                when an unknown printer took a galley of type and scrambled it to make a type specimen book. 
-                It has survived not only five centuries, but also the leap into electronic typesetting,                         essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, 
-                and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
-            </div> 
-        </div>
+        ) : <Loader />
+        }
     </div>
   )
 }

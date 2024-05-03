@@ -1,5 +1,9 @@
-import React, { useState } from 'react'
+import AuthContext from 'context/AuthContext';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from 'firebaseApp';
+import React, { useContext, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Post } from 'type/post';
 
 interface Props {
     hasNavigation? : boolean
@@ -7,8 +11,25 @@ interface Props {
 
 type TabType = "all" | "my"
 
+
+
 export default function PostList({hasNavigation = true} : Props) {
     const [activeTab, setActiveTab] = useState<TabType>("all");
+    const [posts, setPosts] = useState<Post[]>([]);
+    const {user} = useContext(AuthContext);
+
+    const getPosts = async () => {
+        const datas = await getDocs(collection(db, "posts"));
+    
+        datas?.forEach((doc)=>{
+            const dataObj = {...doc.data(), id : doc.id};
+            setPosts((prev)=>[...prev, dataObj as Post])
+        })
+    }
+    useEffect(()=>{
+        getPosts();
+    },[])
+
     return (
     <>
     {   hasNavigation &&
@@ -30,30 +51,32 @@ export default function PostList({hasNavigation = true} : Props) {
         </div>
     }
     <div className = "post__list">
-    {[...Array(10)].map((e, index)=>(
-        <div key = {index} className = "post__box">
-            <Link to={`/posts/${index}`}>
+    {posts?.length > 0 ? posts?.map((post, index)=>(
+        <div key = {post?.id} className = "post__box">
+            <Link to={`/posts/${post?.id}`}>
                 <div className="post__profile-box">
                     <div className="post__profile" />
-                    <div className="post__author-name" >안상문</div>
-                    <div className="post__date" >2023.06.04</div>
+                    <div className="post__author-name" >{post?.email}</div>
+                    <div className="post__date" >{post?.createdAt}</div>
                 </div>
-                <div className = "post__title">게시글 {index}</div>
+
+                <div className = "post__title">{post?.title}</div>
                 <div className="post__text">
-                    Lorem Ipsum is simply dummy text of the printing and typesetting industry. 
-                    Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, 
-                    when an unknown printer took a galley of type and scrambled it to make a type specimen book. 
-                    It has survived not only five centuries, but also the leap into electronic typesetting, 
-                    essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, 
-                    and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.
-                </div>
-                <div className="post__util-box">
-                    <div className="post__delete"></div>
-                    <div className="post__edit"></div>
+                    {post?.summary}
                 </div>
             </Link>
+                { post?.email === user?.email && (
+                    <div className="post__utils-box">
+                        <div className="post__delete">삭제</div>
+                        <div >
+                            <Link to = {`/post/edit/${post?.id}`} className="post__edit" >
+                                수정
+                            </Link>
+                        </div>
+                    </div>
+                )}
         </div>
-    ))}
+    )): <div className='post__no-post'></div>}
     </div>
     </>
   )

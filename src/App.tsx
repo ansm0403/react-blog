@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import './App.css';
 import Router from './components/Router';
-import {app} from "firebaseApp";
+import {app, db} from "firebaseApp";
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { ToastContainer } from 'react-toastify';
 import "react-toastify/dist/ReactToastify.css"
 import Loader from 'components/Loader';
 
 function App() {
+  
   const auth = getAuth(app);
   // auth의 currentUser가 있으면 authenticated로 변경
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!auth?.currentUser);
