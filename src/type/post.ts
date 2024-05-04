@@ -1,3 +1,10 @@
+export interface Comment{
+    content : string;
+    uid : string;
+    email : string;
+    createdAt : string;
+}
+
 export interface Post{
     id? : string;
     title : string
@@ -8,6 +15,7 @@ export interface Post{
     updatedAt : string;
     uid : string;
     category : Category;
+    comments : Comment[];
 }
 
 export type Category = "Frontend" | "Backend" | "Web" | "Native";
