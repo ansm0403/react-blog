@@ -1,34 +1,61 @@
 import AuthContext from 'context/AuthContext';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { db } from 'firebaseApp';
 import React, { useContext, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Post } from 'type/post';
+import { toast } from 'react-toastify';
+import { Category, Post } from 'type/post';
+import { CATEGORIES } from './PostForm';
 
 interface Props {
     hasNavigation? : boolean
+    defaultTab? : TabType;
 }
 
 type TabType = "all" | "my"
 
 
 
-export default function PostList({hasNavigation = true} : Props) {
-    const [activeTab, setActiveTab] = useState<TabType>("all");
+export default function PostList({hasNavigation = true, defaultTab = "all"} : Props) {
+    const [activeTab, setActiveTab] = useState<TabType | Category>("all");
     const [posts, setPosts] = useState<Post[]>([]);
     const {user} = useContext(AuthContext);
 
     const getPosts = async () => {
-        const datas = await getDocs(collection(db, "posts"));
-    
+        setPosts([]);
+        let postsRef = collection(db, "posts");
+        let postsQuery;
+        
+        if(activeTab === 'my' && user){
+            // 나의 글만 보여줌
+            postsQuery = query(postsRef, where('uid', '==', user.uid),  orderBy("createdAt", "asc"))
+        } else if (activeTab === 'all') {
+            // 전체 글 보여줌
+            postsQuery = query(postsRef, orderBy("createdAt", "asc"));
+        } else {
+            // 카테고리 별로 글 보여줌
+            postsQuery = query(postsRef, where('category', '==', activeTab),  orderBy("createdAt", "asc"))
+        }
+        const datas = await getDocs(postsQuery);
+
         datas?.forEach((doc)=>{
             const dataObj = {...doc.data(), id : doc.id};
             setPosts((prev)=>[...prev, dataObj as Post])
         })
     }
+
+    const handleDelete = async (id : string) => {
+        const confirm = window.confirm("게시글을 삭제하겠습니까?");
+        if(confirm && id) {
+            await deleteDoc(doc(db, "posts",id));
+            toast.success("게시글을 삭제하였습니다.")
+            getPosts();
+        }
+    }
+
     useEffect(()=>{
         getPosts();
-    },[])
+    },[activeTab])
 
     return (
     <>
@@ -48,6 +75,17 @@ export default function PostList({hasNavigation = true} : Props) {
             >
                 나의 글
             </div>
+            {
+                CATEGORIES?.map((category) => (
+                    <div 
+                        role = "presentation" 
+                        onClick = {()=>setActiveTab(category)}
+                        className={activeTab === category ? "post__navigation--active" : ""}
+                    >
+                        {category}
+                    </div>
+                ))
+            }
         </div>
     }
     <div className = "post__list">
@@ -67,7 +105,7 @@ export default function PostList({hasNavigation = true} : Props) {
             </Link>
                 { post?.email === user?.email && (
                     <div className="post__utils-box">
-                        <div className="post__delete">삭제</div>
+                        <div className="post__delete" onClick={()=>handleDelete(post?.id as string)}>삭제</div>
                         <div >
                             <Link to = {`/post/edit/${post?.id}`} className="post__edit" >
                                 수정

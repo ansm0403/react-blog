@@ -1,14 +1,16 @@
-import { doc, getDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from 'firebaseApp';
 import React, { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { Post } from 'type/post';
 import Loader from './Loader';
+import { toast } from 'react-toastify';
 
 export default function PostDetail() {
     const [post, setPost] = useState<Post | null>(null)
     const {id : params} = useParams();
     console.log(params)
+    const navigate = useNavigate();
 
     const getPost = async(id : string) => {
         if(id){
@@ -23,6 +25,15 @@ export default function PostDetail() {
     useEffect(()=>{
         if(params) getPost(params);
     },[params])
+    
+    const handleDelete = async () => {
+        const confirm = window.confirm("게시글을 삭제하겠습니까?");
+        if(confirm && post && post.id) {
+            await deleteDoc(doc(db, "posts", post.id));
+            toast.success("게시글을 삭제하였습니다.")
+            navigate('/');
+        }
+    }
 
     return (
     <div className = "post__detail">
@@ -38,7 +49,12 @@ export default function PostDetail() {
                     <div className="post__date" >{post?.createdAt}</div>
                 </div>
                 <div className="post__utils-box">
-                    <div className="post__delete">삭제</div>
+                    {/* {    */}
+                        {/* post?.category && */}
+                        <div className='post__category'>{post?.category}</div>
+                    {/* } */}
+                   
+                    <div className="post__delete" onClick={handleDelete} >삭제</div>
                     <div className="post__edit">
                         <Link to = {`/posts/edit/${post?.id}`} > 수정 </Link>
                     </div>
